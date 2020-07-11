@@ -2,68 +2,62 @@ var readline = require('readline-sync');
 var user_input = readline.question("put your city Name ?");
 const request = require("request")
 request("https://api.openweathermap.org/data/2.5/weather?q="+user_input+"&appid=3a20d3800e1540e8a3f6fb331e91f796",function(err,res,body){
-    var allData_id = JSON.parse(body);
-    var weather_id = allData_id.id 
-    // console.log(weather_id)
-request("https://openweathermap.org/data/2.5/forecast?id="+weather_id+"&appid=b6907d289e10d714a6e88b30761fae22",function(err,res,body_data){
-    var allData_name = JSON.parse(body_data);
-    console.log(allData_name)
+    var allData = JSON.parse(body);
+    // console.log(allData);
 
 var express = require('express');
 var app = express();
-var mysql = require('mysql');
 var bodyParser = require('body-parser');
 app.use(bodyParser.json());
 var knex = require("./connecttion_db.js")
 
-var connection = mysql.createConnection({
-    host: "localhost",
-    user: "root",
-    password: "NAVGURUKUL1",
-    database: "weather_api_details"
-});
+var country = allData['sys']['country']
+var sunrise = allData['sys']['sunrise']
+var sunset = allData['sys']['sunset']
+var Name = allData["name"]
 
-connection.connect((err) => {
-    if (!err)
-        console.log("db connect")
-    else
-        console.log("not connect")
-}) 
-
-app.get('/get',(req,res) => {
-    knex.select("*").from("data").then((got_data) => {
-        // res.send(allData_name)
-        res.send(got_data)
-})
-})
-app.post('/get',(req,res)=>{
+app.post('/postApi',(req,res)=>{
     var all_data = {
-        weatherId : req.body.weatherId,
-        id : req.body.id,
-        cityName : req.body.cityName,
-        country : req.body.country,
-        sunrise : req.body.sunrise,
-        sunset : req.body.sunset
+        cityName : Name,
+        country : country,
+        sunrise : sunrise,
+        sunset : sunset,
+        Date : new Date()
     }
-    knex("data").insert(all_data).then(() => {
-        console.log("data insert")
+    knex("data").insert(all_data)
+    .then(() => {
+        res.send("data insert")
+    }).catch((err)=>{
+        res.send(err)
     })
 })
-app.put('/get',(req,res)=>{
+
+// Get API
+app.get('/get',(req,res) => {
+    knex.select("*").from("data")
+    .then((got_data) => {
+        res.send(got_data)
+    }).catch((err)=>{
+        res.send(err)
+    })
+})
+// UPDATE API
+app.put('/update/:id',(req,res)=>{
+    var id = req.params.id 
     var all_data = {
-        weatherId : req.body.weatherId,
-        id : req.body.id,
-        cityName : req.body.cityName,
-        country : req.body.country,
-        sunrise : req.body.sunrise,
-        sunset : req.body.sunset
+        cityName : Name,
+        country : country,
+        sunrise : sunrise,
+        sunset : sunset,
+        Date : new Date()
     }
     knex("data")
-    .where({id:req.body.id})
+    .where({id:id})
     .update(all_data).then(() => {
         console.log("data put")
+    })
 })
-})
+
 app.delete('/api',(req,res)=>{
     var all_data = {
         weatherId : req.body.weatherId,
@@ -81,6 +75,5 @@ app.delete('/api',(req,res)=>{
 })
 app.listen(8011,function(){
     console.log("port number 8011")
-})
 })
 })
